@@ -56,7 +56,7 @@ export default function OnboardingScreen() {
           />
         </View>
 
-        <Link href="/" asChild>
+        <Link href="/sign-up" asChild>
           <Pressable className="mt-10 flex-row items-center justify-center rounded-2xl bg-lingua-purple px-6 py-4">
             <Text className="text-body-lg text-white">Get Started</Text>
             <Text className="ml-4 text-body-lg text-white">›</Text>
