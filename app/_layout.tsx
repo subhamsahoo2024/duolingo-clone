@@ -29,7 +29,16 @@ export default function RootLayout() {
     <Stack
       screenOptions={{
         contentStyle: { backgroundColor: "#FFFFFF" },
+        headerShown: false,
       }}
-    />
+    >
+      <Stack.Screen
+        name="verification"
+        options={{
+          presentation: "modal",
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+      />
+    </Stack>
   );
 }
