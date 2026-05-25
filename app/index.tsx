@@ -35,6 +35,14 @@ export default function Index() {
             >
               <Text className="text-body-md text-text-primary">Sign out</Text>
             </Pressable>
+            <Pressable
+              onPress={() => router.push("/language-selection")}
+              className="rounded-full border border-border px-5 py-2"
+            >
+              <Text className="text-body-md text-text-primary">
+                Choose language
+              </Text>
+            </Pressable>
           </>
         ) : (
           <View className="flex-row items-center gap-3">
