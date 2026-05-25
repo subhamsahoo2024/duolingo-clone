@@ -59,12 +59,6 @@ export default function Index() {
       >
         <Text className="text-body-md">Open Onboarding</Text>
       </Pressable>
-      <Pressable
-        onPress={() => router.push("/language-selection")}
-        className="rounded-full border border-border px-6 py-3"
-      >
-        <Text className="text-body-md text-text-primary">Choose Language</Text>
-      </Pressable>
     </View>
   );
 }
