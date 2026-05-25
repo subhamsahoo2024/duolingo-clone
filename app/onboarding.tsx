@@ -1,8 +1,19 @@
+import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { Link, Redirect } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 export default function OnboardingScreen() {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (isSignedIn) {
+    return <Redirect href="/" />;
+  }
+
   return (
     <ScrollView
       className="flex-1 bg-background"
