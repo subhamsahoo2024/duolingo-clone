@@ -1,6 +1,8 @@
+import { useSSO, useSignIn, useSignUp } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -12,6 +14,7 @@ import {
 } from "react-native";
 
 type AuthScreenProps = {
+  mode: "sign-in" | "sign-up";
   title: string;
   subtitle: string;
   primaryLabel: string;
@@ -26,9 +29,13 @@ type AuthScreenProps = {
 function SocialAuthButton({
   icon,
   label,
+  onPress,
+  disabled,
 }: {
   icon: "google" | "facebook" | "apple";
   label: string;
+  onPress: () => void;
+  disabled?: boolean;
 }) {
   const iconColor = useMemo(() => {
     switch (icon) {
@@ -54,8 +61,10 @@ function SocialAuthButton({
 
   return (
     <Pressable
+      onPress={onPress}
       className="flex-row items-center justify-center rounded-2xl border border-border bg-white px-4 py-4"
       style={{ borderCurve: "continuous" }}
+      disabled={disabled}
     >
       <Ionicons name={iconName} size={24} color={iconColor} />
       <Text className="ml-4 text-body-lg text-text-primary">{label}</Text>
@@ -64,6 +73,7 @@ function SocialAuthButton({
 }
 
 export function AuthScreen({
+  mode,
   title,
   subtitle,
   primaryLabel,
@@ -75,9 +85,115 @@ export function AuthScreen({
   defaultEmail,
 }: AuthScreenProps) {
   const router = useRouter();
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
+  const { startSSOFlow } = useSSO();
   const [email, setEmail] = useState(defaultEmail);
-  const [password, setPassword] = useState("password123");
+  const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSocialSubmitting, setIsSocialSubmitting] = useState(false);
+
+  const isSignInMode = mode === "sign-in";
+  const passwordChecks = useMemo(
+    () => ({
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[^A-Za-z0-9]/.test(password),
+    }),
+    [password],
+  );
+
+  const handleSubmit = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      if (isSignInMode) {
+        const { error } = await signIn.password({
+          emailAddress: email,
+          password,
+        });
+
+        if (error) {
+          setErrorMessage("Unable to sign in. Please check your details.");
+
+          return;
+        }
+
+        if (signIn.status === "complete") {
+          await signIn.finalize();
+          router.replace("/");
+          return;
+        }
+
+        setErrorMessage("Additional verification is required to continue.");
+        return;
+      }
+
+      const { error } = await signUp.password({
+        emailAddress: email,
+        password,
+      });
+
+      if (error) {
+        setErrorMessage("Unable to sign up. Please check your details.");
+
+        return;
+      }
+
+      await signUp.verifications.sendEmailCode();
+      router.push({ pathname: "/verification", params: { email, mode } });
+    } catch (error) {
+      const message =
+        (error as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
+        "Something went wrong. Please try again.";
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSocialAuth = async (
+    strategy: "oauth_google" | "oauth_facebook" | "oauth_apple",
+  ) => {
+    if (isSocialSubmitting) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsSocialSubmitting(true);
+
+    try {
+      const redirectUrl = Linking.createURL("oauth-callback");
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy,
+        redirectUrl,
+      });
+
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/");
+        return;
+      }
+
+      setErrorMessage("Social sign-in is not complete yet.");
+    } catch (error) {
+      const message =
+        (error as { errors?: { message?: string }[] })?.errors?.[0]?.message ??
+        "Social sign-in failed. Please try again.";
+      setErrorMessage(message);
+    } finally {
+      setIsSocialSubmitting(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -162,21 +278,76 @@ export function AuthScreen({
                     />
                   </Pressable>
                 </View>
+
+                {!isSignInMode ? (
+                  <View className="mt-4 gap-1">
+                    <Text
+                      className={
+                        passwordChecks.minLength
+                          ? "text-body-sm text-success"
+                          : "text-body-sm text-text-secondary"
+                      }
+                    >
+                      - At least 8 characters
+                    </Text>
+                    <Text
+                      className={
+                        passwordChecks.hasUppercase
+                          ? "text-body-sm text-success"
+                          : "text-body-sm text-text-secondary"
+                      }
+                    >
+                      - At least 1 uppercase character
+                    </Text>
+                    <Text
+                      className={
+                        passwordChecks.hasLowercase
+                          ? "text-body-sm text-success"
+                          : "text-body-sm text-text-secondary"
+                      }
+                    >
+                      - At least 1 lowercase character
+                    </Text>
+                    <Text
+                      className={
+                        passwordChecks.hasSpecial
+                          ? "text-body-sm text-success"
+                          : "text-body-sm text-text-secondary"
+                      }
+                    >
+                      - At least 1 special character
+                    </Text>
+                    <Text
+                      className={
+                        passwordChecks.hasNumber
+                          ? "text-body-sm text-success"
+                          : "text-body-sm text-text-secondary"
+                      }
+                    >
+                      - At least 1 number
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             ) : null}
 
             <Pressable
-              onPress={() =>
-                router.push({ pathname: "/verification", params: { email } })
-              }
+              onPress={handleSubmit}
               className="items-center justify-center rounded-3xl bg-lingua-purple px-6 py-5"
               style={{
                 borderCurve: "continuous",
                 boxShadow: "0 12px 24px rgba(108, 78, 245, 0.24)",
               }}
+              disabled={isSubmitting}
             >
-              <Text className="text-h4 text-white">{primaryLabel}</Text>
+              <Text className="text-h4 text-white">
+                {isSubmitting ? "Please wait..." : primaryLabel}
+              </Text>
             </Pressable>
+
+            {errorMessage ? (
+              <Text className="text-body-sm text-error">{errorMessage}</Text>
+            ) : null}
 
             <View className="flex-row items-center gap-3 py-1">
               <View className="h-px flex-1 bg-border" />
@@ -187,25 +358,37 @@ export function AuthScreen({
             </View>
 
             <View className="gap-3">
-              <SocialAuthButton icon="google" label="Continue with Google" />
+              <SocialAuthButton
+                icon="google"
+                label="Continue with Google"
+                onPress={() => handleSocialAuth("oauth_google")}
+                disabled={isSocialSubmitting}
+              />
               <SocialAuthButton
                 icon="facebook"
                 label="Continue with Facebook"
+                onPress={() => handleSocialAuth("oauth_facebook")}
+                disabled={isSocialSubmitting}
               />
-              <SocialAuthButton icon="apple" label="Continue with Apple" />
+              <SocialAuthButton
+                icon="apple"
+                label="Continue with Apple"
+                onPress={() => handleSocialAuth("oauth_apple")}
+                disabled={isSocialSubmitting}
+              />
             </View>
+
+            {isSignInMode ? null : <View nativeID="clerk-captcha" />}
 
             <View className="mt-6 flex-row items-center justify-center gap-1 pb-4">
               <Text className="text-body-md text-text-secondary">
                 {footerPrefix}
               </Text>
-              <Link href={footerLinkHref} asChild>
-                <Pressable>
-                  <Text className="text-body-md text-lingua-purple">
-                    {footerLinkLabel}
-                  </Text>
-                </Pressable>
-              </Link>
+              <Pressable onPress={() => router.push(footerLinkHref)}>
+                <Text className="text-body-md text-lingua-purple">
+                  {footerLinkLabel}
+                </Text>
+              </Pressable>
             </View>
           </View>
         </View>

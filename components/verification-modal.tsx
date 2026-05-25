@@ -1,3 +1,4 @@
+import { useSignUp } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -11,10 +12,15 @@ import {
 
 export function VerificationModal() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, mode } = useLocalSearchParams<{
+    email?: string;
+    mode?: "sign-up";
+  }>();
+  const { signUp } = useSignUp();
   const [code, setCode] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
-  const didNavigateRef = useRef(false);
+  const didVerifyRef = useRef(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -25,11 +31,46 @@ export function VerificationModal() {
   }, []);
 
   useEffect(() => {
-    if (code.length === 6 && !didNavigateRef.current) {
-      didNavigateRef.current = true;
-      router.replace("/");
-    }
-  }, [code, router]);
+    const verifyCode = async () => {
+      if (
+        code.length !== 6 ||
+        didVerifyRef.current ||
+        !signUp ||
+        mode !== "sign-up"
+      ) {
+        return;
+      }
+
+      didVerifyRef.current = true;
+      setErrorMessage(null);
+
+      try {
+        const { error } = await signUp.verifications.verifyEmailCode({ code });
+
+        if (error) {
+          setErrorMessage("Invalid code. Please try again.");
+          return;
+        }
+
+        if (signUp.status === "complete") {
+          await signUp.finalize();
+          router.replace("/");
+          return;
+        }
+
+        setErrorMessage("Verification is not complete yet.");
+      } catch (error) {
+        const message =
+          (error as { errors?: { message?: string }[] })?.errors?.[0]
+            ?.message ?? "Invalid code. Please try again.";
+        setErrorMessage(message);
+      } finally {
+        didVerifyRef.current = false;
+      }
+    };
+
+    verifyCode();
+  }, [code, mode, router, signUp]);
 
   return (
     <View className="flex-1 bg-black/25 px-5 justify-center">
@@ -91,6 +132,12 @@ export function VerificationModal() {
             returnKeyType="done"
             className="absolute h-0 w-0 opacity-0"
           />
+
+          {errorMessage ? (
+            <Text className="mt-5 text-center text-body-sm text-error">
+              {errorMessage}
+            </Text>
+          ) : null}
 
           <Text className="mt-5 text-center text-body-sm text-text-secondary">
             The code will verify automatically as soon as all 6 digits are
