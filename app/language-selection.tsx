@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { languages } from "../data/languages";
+import { useLanguageStore } from "../store/language-store";
 
 type LanguageMeta = {
   countryCode: string;
@@ -19,7 +20,10 @@ const languageMeta: Record<string, LanguageMeta> = {
 
 export default function LanguageSelectionScreen() {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState(languages[0]?.id ?? "");
+  const { selectedLanguageId, setSelectedLanguageId } = useLanguageStore();
+  const [selectedId, setSelectedId] = useState(
+    selectedLanguageId ?? languages[0]?.id ?? "",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   const flagWidth = 160;
@@ -136,7 +140,14 @@ export default function LanguageSelectionScreen() {
 
           <Pressable
             className="mt-6 rounded-2xl bg-lingua-purple px-6 py-4"
-            onPress={() => router.replace("/")}
+            onPress={() => {
+              if (!selectedId) {
+                return;
+              }
+
+              setSelectedLanguageId(selectedId);
+              router.replace("/");
+            }}
           >
             <Text className="text-center text-body-lg text-white">
               Continue
