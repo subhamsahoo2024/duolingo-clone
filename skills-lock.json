@@ -20,9 +20,10 @@
       "computedHash": "cbcad1341a7d32fed789abe864c829f27a2858dc8ba68b92254e9beb53467148"
     },
     "clerk-cli": {
-      "source": "C:\\Users\\SUBHAM~1\\AppData\\Local\\Temp\\clerk-cli-skill-NcV1RC",
-      "sourceType": "local",
-      "computedHash": "c88fa058ffc1cd02fe33c8ad04de5d6a7da7e771df5a37c054bebcd1dfead9a3"
+      "source": "clerk/skills",
+      "sourceType": "github",
+      "skillPath": "skills/core/clerk-cli/SKILL.md",
+      "computedHash": "39d8f6bf47bacba62a0cde3b691058641b9171bb6e92ee1d06e7380bbd775441"
     },
     "clerk-custom-ui": {
       "source": "clerk/skills",
