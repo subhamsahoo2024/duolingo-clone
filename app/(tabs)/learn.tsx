@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -37,6 +38,7 @@ const getPlaceholderImage = (seed: string) => ({
 });
 
 export default function LearnScreen() {
+  const router = useRouter();
   const { selectedLanguageId } = useLanguageStore();
   const [activeTab, setActiveTab] = useState<"lessons" | "practice">("lessons");
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
@@ -227,7 +229,13 @@ export default function LearnScreen() {
               return (
                 <Pressable
                   key={lesson.id}
-                  onPress={() => setActiveLessonId(lesson.id)}
+                  onPress={() => {
+                    setActiveLessonId(lesson.id);
+                    router.push({
+                      pathname: "/(tabs)/ai-teacher",
+                      params: { lessonId: lesson.id },
+                    });
+                  }}
                   className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
                     isActive
                       ? "border-lingua-purple bg-[#F6F1FF]"
