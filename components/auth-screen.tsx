@@ -1,7 +1,7 @@
 import { useSSO, useSignIn, useSignUp } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
+import * as AuthSession from "expo-auth-session";
 import { Image } from "expo-image";
-import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -172,7 +172,10 @@ export function AuthScreen({
     setIsSocialSubmitting(true);
 
     try {
-      const redirectUrl = Linking.createURL("oauth-callback");
+      const redirectUrl = AuthSession.makeRedirectUri({
+        scheme: "duolingoclone",
+        path: "oauth-callback",
+      });
       const { createdSessionId, setActive } = await startSSOFlow({
         strategy,
         redirectUrl,
@@ -336,7 +339,11 @@ export function AuthScreen({
               className="items-center justify-center rounded-3xl bg-lingua-purple px-6 py-5"
               style={{
                 borderCurve: "continuous",
-                boxShadow: "0 12px 24px rgba(108, 78, 245, 0.24)",
+                shadowColor: "#6C4EF5",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.24,
+                shadowRadius: 24,
+                elevation: 12,
               }}
               disabled={isSubmitting}
             >

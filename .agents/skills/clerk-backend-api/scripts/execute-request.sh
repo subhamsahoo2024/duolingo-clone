@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# LOCAL DEV ONLY — not for agent execution.
 
 # Execute a Clerk Backend API request with scope enforcement.
 #
