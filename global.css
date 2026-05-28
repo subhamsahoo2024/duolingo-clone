@@ -29,7 +29,8 @@
   .text-h1 {
     font-family: "Poppins-Bold";
     font-size: 32px;
-    line-height: 1.2;
+    line-height: 38.4px;
+    font-weight: 700;
   }
 
   .text-h2 {
