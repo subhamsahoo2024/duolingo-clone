@@ -132,7 +132,10 @@ export default function LearnScreen() {
     >
       <View className="px-6 pb-8 pt-6">
         <View className="flex-row items-center justify-between">
-          <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white">
+          <Pressable
+            onPress={() => router.back()}
+            className="h-10 w-10 items-center justify-center rounded-full border border-border"
+          >
             <Ionicons name="chevron-back" size={20} color="#0D132B" />
           </Pressable>
           <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white">
